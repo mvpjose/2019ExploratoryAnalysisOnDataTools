@@ -1,0 +1,249 @@
+---
+title: "2019 Exploratory Analysis on Data Tools in R"
+author: "Jose A Maldonado-Garcia"
+date: "3/24/2020"
+output: html_document
+---
+
+## Purpose & Data
+
+  The data used is the [2019 Kaggle ML & DS Survey](https://www.kaggle.com/c/kaggle-survey-2019), provided by Kaggle, and is filtered to have entries of respondents who live in the United States and have completed a Bachelor's degree or higher. The purpose is to find the tools most commonly used by data scientists  with a year or less of experience per degree. 
+
+  Kaggle gathered data from 19,717 of its members who are currently employed as a data scientist. Participants lived in 59 different countries and education levels ranged from no education past high school to Doctoral degrees. For the purpose of this EDA, the data was filtered to only consider participants who lived in the United States, completed a Bachelor’s or higher, and responded to every question in the survey. Leaving a total of 13,383 participants.
+
+
+```{r data_cleaning, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
+colOfInterest <- c(2,3,5,6,56:68,70:81, 83:94, 96, 98:109)
+data <- read_csv("multiple_choice_responses.csv")
+dataFilter <- data[2:nrow(data),colOfInterest]
+cleanData <- dataFilter %>% 
+    unite("Q16", Q16_Part_1:Q16_Part_12, sep = ", ", na.rm = TRUE) %>%
+    unite("Q17", Q17_Part_1:Q17_Part_12, sep = ", ", na.rm = TRUE) %>%
+    unite("Q18", Q18_Part_1:Q18_Part_12, sep = ", ", na.rm = TRUE) %>%
+    unite("Q20", Q20_Part_1:Q20_Part_12, sep = ", ", na.rm = TRUE) %>%
+    mutate_all(~ifelse(. %in% c("N/A", "null", ""), NA, .)) %>%
+    na.omit() %>%
+    rename(Age = Q1, Gender = Q2, Country = Q3, Education = Q4, Experience = Q15, WorkIDE = Q16, 
+           WorkNotebook = Q17, WorkProgramLan = Q18, ProgramLanRec = Q19, WorkDataVis = Q20)
+
+#Set factors and order
+cleanData$Age <- as.factor(cleanData$Age)
+cleanData$Education <- as.factor(cleanData$Education)
+cleanData$Experience <- as.factor(cleanData$Experience)
+
+age <- levels(cleanData$Age)
+educ <- levels(cleanData$Education)
+exp <- levels(cleanData$Experience)
+
+cleanData$Age <- ordered(cleanData$Age, levels = age)
+cleanData$Education <- ordered(cleanData$Education, levels = c(educ[c(3,5,7,1,6,4,2)]))
+cleanData$Experience <- ordered(cleanData$Experience, levels = c(exp[c(1,2,5,6,3,4)]))
+
+#Select data only from the US and those who completed a Bacherlor's or above
+usCleanData <- cleanData[cleanData$Country == "United States of America",]
+usCleanData <- cleanData[cleanData$Education %in% c(educ[c(1,4,6,2)]),]
+
+#Create individual dataframe for column of interest
+workIDEData <- usCleanData %>%
+                select(Age:Experience, WorkIDE) %>%
+                mutate(WorkIDE = str_replace_all(WorkIDE, ",(?=[a-zA-Z1-9 ,/]+\\))", "/")) %>%
+                mutate(work_tools = str_split(WorkIDE, pattern = ","))  %>% 
+                unnest(work_tools)
+workNoteData <- usCleanData %>%
+                  select(Age:Experience, WorkNotebook) %>%
+                  mutate(WorkNotebook = str_replace_all(WorkNotebook, ",(?=[a-zA-Z1-9 ,/]+\\))", "/")) %>%
+                  mutate(work_tools = str_split(WorkNotebook, pattern = ","))  %>% 
+                  unnest(work_tools)
+workProgLanData <- usCleanData %>%
+                    select(Age:Experience, WorkProgramLan) %>%
+                    mutate(work_tools = str_split(WorkProgramLan, pattern = ","))  %>% 
+                    unnest(work_tools)
+workDataVisData <- usCleanData %>%
+                    select(Age:Experience, WorkDataVis) %>%
+                    mutate(WorkDataVis = str_replace_all(WorkDataVis, ",(?=[a-zA-Z1-9 ,/]+\\))", "/")) %>%
+                    mutate(work_tools = str_split(WorkDataVis, pattern = ","))  %>% 
+                    unnest(work_tools)
+
+#Create a count for each new dataframe created
+totalByDegree <- usCleanData %>%
+                  group_by(Education, Experience) %>%
+                  summarise(n = n())
+workIDECount <- workIDEData  %>% 
+                mutate(work_tools = trimws(work_tools, which = c("both"))) %>%
+                group_by(Education, Experience, work_tools)  %>% 
+                summarise(n = n()) %>%
+                arrange(Education, Experience, desc(n)) %>%
+                inner_join(totalByDegree, by = c("Education", "Experience"), suffix = c("", ".totDeg")) %>%
+                mutate(percentage = round(n / n.totDeg * 100, digits = 2))
+workNoteCount <- workNoteData  %>% 
+                  mutate(work_tools = trimws(work_tools, which = c("both"))) %>%
+                  group_by(Education, Experience, work_tools)  %>% 
+                  summarise(n = n()) %>%
+                  arrange(Education, Experience, desc(n)) %>%
+                  inner_join(totalByDegree, by = c("Education", "Experience"), suffix = c("", ".totDeg")) %>%
+                  mutate(percentage = round(n / n.totDeg * 100, digits = 2))
+workProgLanCount <- workProgLanData  %>% 
+                    mutate(work_tools = trimws(work_tools, which = c("both"))) %>%
+                    group_by(Education, Experience, work_tools)  %>% 
+                    summarise(n = n()) %>%
+                    arrange(Education, Experience, desc(n)) %>%
+                    inner_join(totalByDegree, by = c("Education", "Experience"), suffix = c("", ".totDeg")) %>%
+                    mutate(percentage = round(n / n.totDeg * 100, digits = 2))
+workDataVisCount <- workDataVisData  %>% 
+                    mutate(work_tools = trimws(work_tools, which = c("both"))) %>%
+                    group_by(Education, Experience, work_tools)  %>% 
+                    summarise(n = n()) %>%
+                    arrange(Education, Experience, desc(n)) %>%
+                    inner_join(totalByDegree, by = c("Education", "Experience"), suffix = c("", ".totDeg")) %>%
+                    mutate(percentage = round(n / n.totDeg * 100, digits = 2))
+
+#TOP 5 SELECTOR : filter(row_number(BY_WHAT_YOU_WANT_TO_LIMIT) <= 5)
+
+```
+
+## Data Science Tools
+
+  The following sections focus on the IDE, notebook, daily programming language, and data visualization libraries used by the participants. Each section will filter the top 5 choices by education and experience for there respective categories, analyze the top 2 choices for each degree, and analyze the top choice for participants with a year or less of experience. 
+
+### Integrated Development Environment
+
+  An integrated development environment (IDE) is software used to create programs that combine developer tools into one place. IDEs normally consist of a text editor, a debugger, and a compiler. Text editors are used in writing code for the program, debuggers help find errors in the code, and compilers turn the text into a program. 
+
+```{r ide_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+ 
+#Plots Workspace IDE count 
+#Dodge Bar IDE
+ggplot(workIDECount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, n), y = n, fill = Education)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), n) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("IDE") + ylab("Count") +
+      #To make bold
+      #Flip chart and change color palette
+      coord_flip()
+
+```
+
+The table above shows Jupyter is popular for participants holding any type of degree. Followed by Visual Studio for Bacherlor's degree and RStudio for Professional, Master's, and Doctoral degree. 
+
+```{r ide_Graphs2, fig.height = 8, fig.width = 14, fig.align = "center", echo = FALSE}
+
+ #Dodge Bar IDE
+ggplot(workIDECount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, percentage), y = percentage, fill = Experience)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), percentage) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("IDE") + ylab("Percent") +
+      facet_wrap(~Education, scales = "free") +
+      #Flip chart and change color palette
+      coord_flip()
+
+```
+
+By decomposing the previous graph by education and dividing each count by the total number who respondents by experience, respectively, Jupyter is the most popular ide IDE for every degree holder with less than a year of experience.   
+
+### Notebook
+
+Notebooks are used to segment code into paragraphs that can be individually compiled. They have risen in popularity among the data science community due to ease of sharing and collaboration.
+
+```{r note_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+
+#Plots Workspace Notebook count
+#Dodge Bar Notebook
+ggplot(workNoteCount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, n), y = n, fill = Education)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), n) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("Notebook") + ylab("Count") +
+      #To make bold
+      #Flip chart and change color palette
+      coord_flip()
+
+```
+
+Participants having a Bachelor's, Professional, or Master's degree use using Kaggle Notebooks while Doctoral degree holders use no notebook. Google Colab is the second most popular for Bachelor's and Doctoral degree and no notebook for Professional or Master's degree.
+
+```{r note_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+
+#Fill Bar Notebook
+ggplot(workNoteCount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, percentage), y = percentage, fill = Experience)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), percentage) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("Notebook") + ylab("Percent") +
+      facet_wrap(~Education) + 
+      #Flip chart and change color palette
+      coord_flip()
+
+```
+
+Bachelor degree holders with less than a year of experience predominantly use Kaggle Notebooks, while degrees above a Bachelor's do not use a notebook.
+
+### Programming Language
+
+Programming languages are formal languages made up of a set of instructions that a computer can interpret to produce various outputs.
+
+```{r pl_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+
+#Plots Workspace Programing language count
+#Dodge Bar PL
+ggplot(workProgLanCount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, n), y = n, fill = Education)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), n) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("Programing Language") + ylab("Count") +
+      #To make bold
+      #Flip chart and change color palette
+      coord_flip() 
+
+```
+
+Participants having a Bachelor's or higher all predominantly use Python. Followed by SQL for participants having a Bachelor's, Professional, or Master's degree, and R for Doctoral degree. 
+
+```{r pl_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+#Fill Bar PL
+ggplot(workProgLanCount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, percentage), y = percentage, fill = Experience)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), percentage) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("Programming Language") + ylab("Percent") +
+      facet_wrap(~Education) + 
+      #Flip chart and change color palette
+      coord_flip()
+
+```
+
+Similiar to the previous graph, any participant with an undergraduate degree or higher and less than a year of experience use Python. 
+
+### Data Visualization Libraries
+
+Libraries are a collection of precompiled routines that a program can use. In this case, the precompiled routines assist in data visualization.
+
+```{r dv_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+
+#Plots Workspace Data Vis. count
+#Dodge Bar Data Vis.
+ggplot(workDataVisCount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, n), y = n, fill = Education)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), n) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("Data Visulization Library") + ylab("Count") +
+      #To make bold
+      #Flip chart and change color palette
+      coord_flip() 
+
+```
+
+From the table above, the most predominantly used data library is Matplotlib, followed by Seaborn for participants holding an undergraduate degreea or higher.
+
+```{r dv_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+
+#Fill Bar Data Vis.
+ggplot(workDataVisCount%>%filter(row_number(Experience) <= 5), 
+       aes(x = fct_reorder(work_tools, percentage), y = percentage, fill = Experience)) + 
+      geom_bar(position = "dodge", stat = "identity") + aes(stringr::str_wrap(work_tools, 30), percentage) +
+      theme(axis.text.x = element_text(angle = 90)) + xlab("Data Visualization Library") + ylab("Percent") +
+      facet_wrap(~Education) + 
+      #Flip chart and change color palette
+      coord_flip() 
+
+```
+
+To no surprise from the previous section as well as the previous graph, Matplotlib is the most used data visualization library used for undergraduate degrees or higher with less than a year of experience.
