@@ -1,0 +1,2 @@
+# 2019ExploratoryAnalysisOnDataTools
+ The data used is the [2019 Kaggle ML &amp; DS Survey](https://www.kaggle.com/c/kaggle-survey-2019), provided by Kaggle, and is filtered to have entries of respondents who live in the United States and have completed a Bachelor's degree or higher. The purpose is to find the tools most commonly used by data scientists  with a year or less of experience per degree.
