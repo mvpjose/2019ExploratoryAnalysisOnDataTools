@@ -113,7 +113,7 @@ workDataVisCount <- workDataVisData  %>%
 
   An integrated development environment (IDE) is software used to create programs that combine developer tools into one place. IDEs normally consist of a text editor, a debugger, and a compiler. Text editors are used in writing code for the program, debuggers help find errors in the code, and compilers turn the text into a program. 
 
-```{r ide_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+```{r dpi=70, ide_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
  
 #Plots Workspace IDE count 
 #Dodge Bar IDE
@@ -129,7 +129,7 @@ ggplot(workIDECount%>%filter(row_number(Experience) <= 5),
 
 The table above shows Jupyter is popular for participants holding any type of degree. Followed by Visual Studio for Bacherlor's degree and RStudio for Professional, Master's, and Doctoral degree. 
 
-```{r ide_Graphs2, fig.height = 8, fig.width = 14, fig.align = "center", echo = FALSE}
+```{r dpi=70, ide_Graphs2, fig.height = 8, fig.width = 14, fig.align = "center", echo = FALSE}
 
  #Dodge Bar IDE
 ggplot(workIDECount%>%filter(row_number(Experience) <= 5), 
@@ -148,7 +148,7 @@ By decomposing the previous graph by education and dividing each count by the to
 
 Notebooks are used to segment code into paragraphs that can be individually compiled. They have risen in popularity among the data science community due to ease of sharing and collaboration.
 
-```{r note_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+```{r dpi=70, note_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
 
 #Plots Workspace Notebook count
 #Dodge Bar Notebook
@@ -164,7 +164,7 @@ ggplot(workNoteCount%>%filter(row_number(Experience) <= 5),
 
 Participants having a Bachelor's, Professional, or Master's degree use using Kaggle Notebooks while Doctoral degree holders use no notebook. Google Colab is the second most popular for Bachelor's and Doctoral degree and no notebook for Professional or Master's degree.
 
-```{r note_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+```{r dpi=70, note_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
 
 #Fill Bar Notebook
 ggplot(workNoteCount%>%filter(row_number(Experience) <= 5), 
@@ -183,7 +183,7 @@ Bachelor degree holders with less than a year of experience predominantly use Ka
 
 Programming languages are formal languages made up of a set of instructions that a computer can interpret to produce various outputs.
 
-```{r pl_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+```{r dpi=70, pl_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
 
 #Plots Workspace Programing language count
 #Dodge Bar PL
@@ -199,7 +199,7 @@ ggplot(workProgLanCount%>%filter(row_number(Experience) <= 5),
 
 Participants having a Bachelor's or higher all predominantly use Python. Followed by SQL for participants having a Bachelor's, Professional, or Master's degree, and R for Doctoral degree. 
 
-```{r pl_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+```{r dpi=70, pl_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
 #Fill Bar PL
 ggplot(workProgLanCount%>%filter(row_number(Experience) <= 5), 
        aes(x = fct_reorder(work_tools, percentage), y = percentage, fill = Experience)) + 
@@ -217,7 +217,7 @@ Similiar to the previous graph, any participant with an undergraduate degree or 
 
 Libraries are a collection of precompiled routines that a program can use. In this case, the precompiled routines assist in data visualization.
 
-```{r dv_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+```{r dpi=70, dv_Graphs1, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
 
 #Plots Workspace Data Vis. count
 #Dodge Bar Data Vis.
@@ -233,7 +233,7 @@ ggplot(workDataVisCount%>%filter(row_number(Experience) <= 5),
 
 From the table above, the most predominantly used data library is Matplotlib, followed by Seaborn for participants holding an undergraduate degreea or higher.
 
-```{r dv_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
+```{r dpi=70, dv_Graphs2, fig.height = 6, fig.width = 12, fig.align = "center", echo = FALSE}
 
 #Fill Bar Data Vis.
 ggplot(workDataVisCount%>%filter(row_number(Experience) <= 5), 
